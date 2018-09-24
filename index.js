@@ -90,7 +90,7 @@ function findAvailability(auth) {
 
             const events = res.data.items;
             if (events.length) {
-              var availableSlots = getAvailabilitySlots(startDate, endDate, events);
+              var availableSlots = getAvailabilitySlots(startDate, events);
 
               const rl = readline.createInterface({
                 input: process.stdin,
@@ -98,11 +98,7 @@ function findAvailability(auth) {
               });
 
               // Print out the header
-              rl.write(
-                'Availability from ' + 
-                moment(startDate).format(DEFAULT_DATE_FORMAT) + ' to ' + 
-                moment(endDate).format(DEFAULT_DATE_FORMAT) + ':\n'
-              );
+              rl.write(`Availability from ${moment(startDate).format(DEFAULT_DATE_FORMAT)} to ${moment(endDate).format(DEFAULT_DATE_FORMAT)}:\n`);
 
               // Print out the availability slot
               availableSlots.map((slot) => {
@@ -124,9 +120,9 @@ function findAvailability(auth) {
 /**
  * Returns an Array of AvailablitySlot objects.
  * @param {object[]} events An Array of Google Calendar event objects.
- * @return an Array of AvailablitySlot objects.
+ * @return {AvailabilitySlot[]} An Array of AvailablitySlot objects.
  */
-function getAvailabilitySlots(startDate, endDate, events) {
+function getAvailabilitySlots(startDate, events) {
   var availabilitySlots = [];
   var slotStartDate = startDate;
 
