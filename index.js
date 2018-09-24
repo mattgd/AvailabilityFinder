@@ -8,6 +8,8 @@ const moment = require('moment');
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
 const TOKEN_PATH = 'token.json';
 const DEFAULT_DATE_FORMAT = 'ddd MM/DD h:mm a';
+const DEFAULT_BUFFER_TIME = 30;
+const MS_PER_MINUTE = 60000;
 
 // Load client secrets from a local file.
 fs.readFile('credentials.json', (err, content) => {
@@ -66,6 +68,22 @@ function getAccessToken(oAuth2Client, callback) {
   });
 }
 
+function getStartDateInput() {
+  getDateInput('start date', function(startDate) {
+    if (startDate) {
+      getEndDateInput(startDate);
+    }
+  });
+}
+
+function getEndDateInput(startDate) {
+  getDateInput('end date', function(endDate) {
+    if (endDate) {
+
+    }
+  });
+}
+
 /**
  * Lists the next 10 events on the user's primary calendar.
  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
@@ -90,7 +108,8 @@ function findAvailability(auth) {
 
             const events = res.data.items;
             if (events.length) {
-              var availableSlots = getAvailabilitySlots(startDate, events);
+              var bufferTime = DEFAULT_BUFFER_TIME;
+              var availableSlots = getAvailabilitySlots(startDate, endDate, bufferTime, events);
 
               const rl = readline.createInterface({
                 input: process.stdin,
@@ -119,10 +138,13 @@ function findAvailability(auth) {
 
 /**
  * Returns an Array of AvailablitySlot objects.
+ * @param {Date} startDate The date to start looking for availability.
+ * @param {Date} endDate The date to stop looking for availability.
+ * @param {Date} bufferTime The amount of time buffer events with.
  * @param {object[]} events An Array of Google Calendar event objects.
  * @return {AvailabilitySlot[]} An Array of AvailablitySlot objects.
  */
-function getAvailabilitySlots(startDate, events) {
+function getAvailabilitySlots(startDate, endDate, bufferTime, events) {
   var availabilitySlots = [];
   var slotStartDate = startDate;
 
@@ -130,11 +152,14 @@ function getAvailabilitySlots(startDate, events) {
     const start = event.start.dateTime || event.start.date;
     const end = event.end.dateTime || event.end.date;
 
-    var slot = new AvailabilitySlot(slotStartDate, start);                
+    var slot = new AvailabilitySlot(slotStartDate, moment(start).subtract(bufferTime, 'm').toDate());                
     availabilitySlots.push(slot);
 
     slotStartDate = end; // Set to end of current event
   }
+
+  // Add any remaining availability after events.
+  availabilitySlots.push(new AvailabilitySlot(slotStartDate, endDate));
 
   return availabilitySlots;
 }
