@@ -1,12 +1,12 @@
+const AvailabilitySlot = require('./AvailabilitySlot');
+
 const fs = require('fs');
 const readline = require('readline');
 const {google} = require('googleapis');
 const moment = require('moment');
 
-// If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
 const TOKEN_PATH = 'token.json';
-
 const DEFAULT_DATE_FORMAT = 'ddd MM/DD h:mm a';
 
 // Load client secrets from a local file.
@@ -73,10 +73,6 @@ function getAccessToken(oAuth2Client, callback) {
 function findAvailability(auth) {
   const calendar = google.calendar({version: 'v3', auth});
 
-  /*const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });*/
   getDateInput('start date', function(startDate) {
     if (startDate) {
       getDateInput('end date', function(endDate) {
@@ -92,38 +88,25 @@ function findAvailability(auth) {
               return console.log('The API returned an error: ' + err);
             }
 
-            // TODO: Implement the following fields: buffer time, time range 
-            // (9am-5pm, or 9-17), appointment length, date output format, timezone selection
-            // Availbilities per day (prioritized by length of time)
-
             const events = res.data.items;
             if (events.length) {
-              var availableSlots = [];
-              var slotStartDate = startDate;
+              var availableSlots = getAvailabilitySlots(startDate, events);
 
-              for (event of events) {
-                const start = event.start.dateTime || event.start.date;
-                const end = event.end.dateTime || event.end.date;
-                
-                availableSlots.push(
-                  moment(slotStartDate).format(DEFAULT_DATE_FORMAT) + ' to ' + 
-                  moment(start).format(DEFAULT_DATE_FORMAT)
-                );
-
-                slotStartDate = end; // Set to end of current event
-              }
+              const rl = readline.createInterface({
+                input: process.stdin,
+                output: process.stdout,
+              });
 
               // Print out the header
-              console.log(
-                'Availability from ' + 
-                moment(startDate).format(DEFAULT_DATE_FORMAT) + ' to ' + 
-                moment(endDate).format(DEFAULT_DATE_FORMAT) + ':'
-              );
+              rl.write(`Availability from ${moment(startDate).format(DEFAULT_DATE_FORMAT)} to ${moment(endDate).format(DEFAULT_DATE_FORMAT)}:\n`);
 
               // Print out the availability slot
-              availableSlots.map((slot, i) => {
-                console.log(`\u2022 ${slot}`);
+              availableSlots.map((slot) => {
+                rl.write(`\u2022 ${slot}\n`);
               });
+
+              rl.close();
+              process.stdin.destroy();
             } else {
               console.log('No upcoming events found.');
             }
@@ -135,9 +118,31 @@ function findAvailability(auth) {
 }
 
 /**
+ * Returns an Array of AvailablitySlot objects.
+ * @param {object[]} events An Array of Google Calendar event objects.
+ * @return {AvailabilitySlot[]} An Array of AvailablitySlot objects.
+ */
+function getAvailabilitySlots(startDate, events) {
+  var availabilitySlots = [];
+  var slotStartDate = startDate;
+
+  for (event of events) {
+    const start = event.start.dateTime || event.start.date;
+    const end = event.end.dateTime || event.end.date;
+
+    var slot = new AvailabilitySlot(slotStartDate, start);                
+    availabilitySlots.push(slot);
+
+    slotStartDate = end; // Set to end of current event
+  }
+
+  return availabilitySlots;
+}
+
+/**
  * Gets a date input from stdin by prompting the user.
  * @param {string} dateName Name of the date for output purposes.
- * @param {*} callback The result callback.
+ * @param {function} callback The result callback.
  */
 function getDateInput(dateName, callback) {
   const rl = readline.createInterface({
