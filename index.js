@@ -2,6 +2,7 @@
 'use strict';
 
 const AvailabilitySlot = require('./AvailabilitySlot'),
+      { convertToDate, addTimeString } = require('./DateUtil'),
       fs = require('fs'),
       {google} = require('googleapis'),
       moment = require('moment'),
@@ -20,7 +21,9 @@ program
   .option('-S, --start-date <date>', 'availability search start date')
   .option('-E, --end-date <date>', 'availability search end date')
   .option('-d, --date-format <format>', 'optional output date format')
-  .option('-n, --now [range]', 'set availability start/end dates based on current date/time where range is days or weeks (e.g. 5d, 1w), default 1w')
+  .option('-n, --now [range]', 'set availability start/end dates based on ' +
+    'current date/time where range is days or weeks (e.g. 5d, 1w), default 1w')
+  .option('-b, --buffer-time <time>', 'amount of buffer time between events and availability')
   .action(run)
   .parse(process.argv); // end with parse to parse through the input
 
@@ -32,8 +35,8 @@ function run() {
     // If program was called with no start/end date, show help.
     program.help();
   } else {
-    const startDate = program.startDate ? program.startDate : new Date();
-    const endDate = program.endDate ? program.endDate : calculateDate(program.now);
+    const startDate = program.startDate ? convertToDate(program.startDate) : new Date();
+    const endDate = program.endDate ? convertToDate(program.endDate) : addTimeString(startDate, program.now);
 
     // Load client secrets from a local file.
     fs.readFile('credentials.json', (err, content) => {
@@ -131,7 +134,7 @@ function findAvailability(auth, startDate, endDate) {
 
     const events = res.data.items;
     if (events.length) {
-      var bufferTime = DEFAULT_BUFFER_TIME;
+      var bufferTime = program.bufferTime ? +program.bufferTime : DEFAULT_BUFFER_TIME;
       var availableSlots = getAvailabilitySlots(startDate, endDate, bufferTime, events);
 
       const rl = readline.createInterface({
@@ -182,43 +185,4 @@ function getAvailabilitySlots(startDate, endDate, bufferTime, events) {
   availabilitySlots.push(new AvailabilitySlot(slotStartDate, endDate));
 
   return availabilitySlots;
-}
-
-/**
- * Gets a date input from stdin by prompting the user.
- * @param {string} dateName Name of the date for output purposes.
- * @param {function} callback The result callback.
- */
-function getDateInput(dateName, callback) {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  rl.question('Enter the ' + dateName + ' for availability: ', (dateStr) => {
-    let date = new Date(dateStr);
-
-    // Check for invalid dateStr
-    if (!date) {
-      rl.write(dateStr + ' is not in a valid date format.');
-      rl.close();
-      callback(null);
-    }
-
-    rl.close();
-    callback(date.toISOString());
-  });
-}
-
-/**
- * Takes in a time string (e.g. 5d, 1w) and returns the current
- * date/time plus the time string amount.
- * @param {string} timeStr The time string to add to the current date.
- * @returns the current date/time plus the time string amount.
- */
-function calculateDate(timeStr) {
-  var count = +timeStr.substr(0, timeStr.length - 1);
-  var unit = timeStr.substr(timeStr.length - 1);
-
-  return moment().add(count, unit).toDate();
 }
