@@ -4,6 +4,7 @@
   "description": "Finds and lists out availability from your Google Calendar.",
   "main": "index.js",
   "dependencies": {
+    "commander": "^2.18.0",
     "googleapis": "^27.0.0",
     "moment": "^2.22.2"
   },
