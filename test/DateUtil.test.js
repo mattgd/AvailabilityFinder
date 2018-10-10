@@ -18,8 +18,6 @@ describe('convertToDate()', function () {
 
   it('should throw an error', function () {
     // 1. ARRANGE
-    const expected = new Date(2018, 9, 4);
-
     const dateStr = '10-Inv4lid';
 
     // 2 & 3. ACT & ASSERT
