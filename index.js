@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-const AvailabilitySlot = require('./AvailabilitySlot'),
+const { getAvailabilitySlots } = require('./AvailabilitySlot'),
       { convertToDate, addTimeString } = require('./DateUtil'),
       fs = require('fs'),
       {google} = require('googleapis'),
@@ -12,8 +12,9 @@ const AvailabilitySlot = require('./AvailabilitySlot'),
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
 const TOKEN_PATH = 'token.json';
 const DEFAULT_DATE_FORMAT = 'ddd MM/DD h:mm a';
+const DEFAULT_NOW_RANGE = '1w';
 const DEFAULT_BUFFER_TIME = 30;
-const MS_PER_MINUTE = 60000;
+const DEFAULT_APPOINTMENT_LENGTH = 0;
 
 program
   .version('0.0.2')
@@ -23,7 +24,8 @@ program
   .option('-d, --date-format <format>', 'optional output date format')
   .option('-n, --now [range]', 'set availability start/end dates based on ' +
     'current date/time where range is days or weeks (e.g. 5d, 1w), default 1w')
-  .option('-b, --buffer-time <time>', 'amount of buffer time between events and availability')
+  .option('-b, --buffer-time <time>', 'amount of buffer time between events and availability in minutes')
+  .option('-l, --appointment-length <time>', 'length of the appointment in minutes')
   .action(run)
   .parse(process.argv); // end with parse to parse through the input
 
@@ -35,8 +37,14 @@ function run() {
     // If program was called with no start/end date, show help.
     program.help();
   } else {
-    const startDate = program.startDate ? convertToDate(program.startDate) : new Date();
-    const endDate = program.endDate ? convertToDate(program.endDate) : addTimeString(startDate, program.now);
+    let startDate = program.startDate ? convertToDate(program.startDate) : new Date();
+    let endDate;
+
+    if (program.endDate) {
+      endDate = convertToDate(program.endDate);
+    } else {
+      endDate = addTimeString(startDate, program.now !== true ? program.now : DEFAULT_NOW_RANGE);
+    }
 
     // Load client secrets from a local file.
     fs.readFile('credentials.json', (err, content) => {
@@ -135,7 +143,9 @@ function findAvailability(auth, startDate, endDate) {
     const events = res.data.items;
     if (events.length) {
       var bufferTime = program.bufferTime ? +program.bufferTime : DEFAULT_BUFFER_TIME;
-      var availableSlots = getAvailabilitySlots(startDate, endDate, bufferTime, events);
+      var appointmentLength = program.appointmentLength ? +program.appointmentLength : DEFAULT_APPOINTMENT_LENGTH;
+      var availableSlots = getAvailabilitySlots(startDate, endDate, bufferTime, 
+                                                appointmentLength, events);
 
       const rl = readline.createInterface({
         input: process.stdin,
@@ -156,33 +166,4 @@ function findAvailability(auth, startDate, endDate) {
       console.log('No upcoming events found.');
     }
   });
-}
-
-/**
- * Returns an Array of AvailablitySlot objects.
- * @param {Date} startDate The date to start looking for availability.
- * @param {Date} endDate The date to stop looking for availability.
- * @param {Date} bufferTime The amount of time buffer events with.
- * @param {object[]} events An Array of Google Calendar event objects.
- * @return {AvailabilitySlot[]} An Array of AvailablitySlot objects.
- */
-function getAvailabilitySlots(startDate, endDate, bufferTime, events) {
-  var availabilitySlots = [];
-  var slotStartDate = startDate;
-  var event;
-
-  for (event of events) {
-    const start = event.start.dateTime || event.start.date;
-    const end = event.end.dateTime || event.end.date;
-
-    var slot = new AvailabilitySlot(slotStartDate, moment(start).subtract(bufferTime, 'm').toDate());                
-    availabilitySlots.push(slot);
-
-    slotStartDate = end; // Set to end of current event
-  }
-
-  // Add any remaining availability after events.
-  availabilitySlots.push(new AvailabilitySlot(slotStartDate, endDate));
-
-  return availabilitySlots;
 }
