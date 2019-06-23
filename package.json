@@ -1,18 +1,18 @@
 {
   "name": "availabilityfinder",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Finds and lists out availability from your Google Calendar.",
   "main": "index.js",
   "dependencies": {
-    "commander": "^2.18.0",
-    "googleapis": "^27.0.0",
-    "moment": "^2.22.2"
+    "commander": "^2.20.0",
+    "googleapis": "^40.0.0",
+    "moment": "^2.24.0"
   },
   "devDependencies": {
-    "chai": "^4.1.2",
-    "codecov": "^3.1.0",
-    "mocha": "^5.2.0",
-    "nyc": "^13.0.1"
+    "chai": "^4.2.0",
+    "codecov": "^3.5.0",
+    "mocha": "^6.1.4",
+    "nyc": "^14.1.1"
   },
   "scripts": {
     "test": "nyc mocha",
