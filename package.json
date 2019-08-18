@@ -4,14 +4,14 @@
   "description": "Finds and lists out availability from your Google Calendar.",
   "main": "index.js",
   "dependencies": {
-    "commander": "^2.20.0",
-    "googleapis": "^40.0.0",
+    "commander": "^3.0.0",
+    "googleapis": "^42.0.0",
     "moment": "^2.24.0"
   },
   "devDependencies": {
     "chai": "^4.2.0",
     "codecov": "^3.5.0",
-    "mocha": "^6.1.4",
+    "mocha": "^6.2.0",
     "nyc": "^14.1.1"
   },
   "scripts": {
