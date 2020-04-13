@@ -1,13 +1,11 @@
-'use strict';
-
-const moment = require('moment');
+import moment from 'moment';
 
 /**
  * Validates a date string input and returns it as a Date.
  * @param {string} dateStr The date string input.
  * @returns a JavaScript Date object.
  */
-function convertToDate(dateStr) {
+const convertToDate = (dateStr: string) => {
     let date = new Date(dateStr);
     
     // Check for invalid dateStr
@@ -25,11 +23,11 @@ function convertToDate(dateStr) {
  * @param {string} timeStr The time string to add to the current date.
  * @returns the current date/time plus the time string amount.
  */
-function addTimeString(date, timeStr) {
+function addTimeString(date: Date, timeStr: string) {
     var count = +timeStr.substr(0, timeStr.length - 1);
     var unit = timeStr.substr(timeStr.length - 1);
 
     return moment(date).add(count, unit).toDate();
 }
 
-module.exports = { convertToDate, addTimeString };
+export { convertToDate, addTimeString };

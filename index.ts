@@ -1,17 +1,14 @@
-#!/usr/bin/env node
-'use strict';
-
-const { getAvailabilitySlots } = require('./AvailabilitySlot'),
-      { convertToDate, addTimeString } = require('./DateUtil'),
-      fs = require('fs'),
-      {google} = require('googleapis'),
-      moment = require('moment'),
-      program = require('commander'),
-      readline = require('readline');
+import fs from 'fs';
+import { google } from 'googleapis';
+import moment from 'moment';
+import program from 'commander';
+import readline from 'readline';
+import { getAvailabilitySlots } from './AvailabilitySlot';
+import { convertToDate, addTimeString } from './DateUtil';
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
 const TOKEN_PATH = 'token.json';
-const DEFAULT_DATE_FORMAT = 'ddd MM/DD h:mm a';
+export const DEFAULT_DATE_FORMAT = 'ddd MM/DD h:mm a';
 const DEFAULT_NOW_RANGE = '1w';
 const DEFAULT_BUFFER_TIME = 30;
 const DEFAULT_APPOINTMENT_LENGTH = 0;
@@ -64,7 +61,7 @@ function run() {
  * @param {Object} credentials The authorization client credentials.
  * @param {function} callback The callback to call with the authorized client.
  */
-function authorize(credentials, callback, startDate, endDate) {
+function authorize(credentials, callback, startDate: Date, endDate: Date) {
   const {client_secret, client_id, redirect_uris} = credentials.installed;
   const oAuth2Client = new google.auth.OAuth2(
       client_id, client_secret, redirect_uris[0]);
