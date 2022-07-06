@@ -6,7 +6,7 @@
   "dependencies": {
     "commander": "^3.0.0",
     "googleapis": "^42.0.0",
-    "moment": "^2.24.0"
+    "moment": "^2.29.4"
   },
   "devDependencies": {
     "chai": "^4.2.0",
